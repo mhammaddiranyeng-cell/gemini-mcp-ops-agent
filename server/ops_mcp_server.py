@@ -28,25 +28,6 @@ def init_db():
             ])
 
 init_db()
-@mcp.resource("ops://policy/sla")
-def get_ops_policy() -> str:
-    return (
-        "1. Restock any SKU with stock_qty < reorder_threshold up to reorder_threshold + 3.\n"
-        "2. Orders < $1000 USD are AUTO_APPROVED; >= $1000 USD are PENDING_MANAGER_APPROVAL.\n"
-        "3. Escalate OPEN HIGH-severity incidents to Tier-3."
-    )
-
-@mcp.tool()
-def list_low_stock_inventory() -> str:
-    with get_conn() as c:
-        rows = c.execute("SELECT * FROM inventory WHERE stock_qty < reorder_threshold").fetchall()
-    return json.dumps([dict(r) for r in rows])
-
-@mcp.tool()
-def list_open_incidents() -> str:
-    with get_conn() as c:
-        rows = c.execute("SELECT * FROM incidents WHERE status != 'CLOSED'").fetchall()
-    return json.dumps([dict(r) for r in rows])
 @mcp.tool()
 def create_restock_order(sku: str, quantity: int, justification: str) -> str:
     with get_conn() as c:

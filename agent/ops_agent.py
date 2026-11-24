@@ -74,3 +74,6 @@ class AutonomousOpsAgent:
 if __name__ == "__main__":
     out = asyncio.run(AutonomousOpsAgent().run_triage("Audit low-stock hardware, place compliant restock orders per SLA, and escalate any open HIGH-severity incidents."))
     print(json.dumps(out, indent=2))
+if __name__ == "__main__":
+    out = asyncio.run(AutonomousOpsAgent().run_triage("Audit low-stock hardware, place compliant restock orders per SLA, and escalate any open HIGH-severity incidents."))
+    print(json.dumps(out, indent=2))
