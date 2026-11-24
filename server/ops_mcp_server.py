@@ -47,52 +47,6 @@ def list_open_incidents() -> str:
     with get_conn() as c:
         rows = c.execute("SELECT * FROM incidents WHERE status != 'CLOSED'").fetchall()
     return json.dumps([dict(r) for r in rows])
-
-@mcp.tool()
-def create_restock_order(sku: str, quantity: int, justification: str) -> str:
-    with get_conn() as c:
-        item = c.execute("SELECT * FROM inventory WHERE sku = ?", (sku,)).fetchone()
-        if not item:
-            return json.dumps({"error": f"Unknown SKU: {sku}"})
-        total = round(float(item["unit_cost_usd"]) * quantity, 2)
-        status = "AUTO_APPROVED" if total < 1000.0 else "PENDING_MANAGER_APPROVAL"
-        cur = c.execute(
-            "INSERT INTO restock_orders (sku, quantity, total_cost_usd, approval_status, reason, created_at) VALUES (?,?,?,?,?,?)",
-            (sku, quantity, total, status, justification, datetime.now(timezone.utc).isoformat()),
-        )
-        return json.dumps({"order_id": cur.lastrowid, "sku": sku, "quantity": quantity, "total_cost_usd": total, "approval_status": status})
-
-@mcp.tool()
-def escalate_incident(ticket_id: str, escalation_note: str) -> str:
-    with get_conn() as c:
-        row = c.execute("SELECT * FROM incidents WHERE ticket_id = ?", (ticket_id,)).fetchone()
-        if not row:
-            return json.dumps({"error": f"Ticket {ticket_id} not found"})
-        c.execute("UPDATE incidents SET status = 'ESCALATED_TIER3' WHERE ticket_id = ?", (ticket_id,))
-    return json.dumps({"ticket_id": ticket_id, "new_status": "ESCALATED_TIER3", "note": escalation_note})
-
-if __name__ == "__main__":
-    mcp.run(transport="stdio")
-@mcp.resource("ops://policy/sla")
-def get_ops_policy() -> str:
-    return (
-        "1. Restock any SKU with stock_qty < reorder_threshold up to reorder_threshold + 3.\n"
-        "2. Orders < $1000 USD are AUTO_APPROVED; >= $1000 USD are PENDING_MANAGER_APPROVAL.\n"
-        "3. Escalate OPEN HIGH-severity incidents to Tier-3."
-    )
-
-@mcp.tool()
-def list_low_stock_inventory() -> str:
-    with get_conn() as c:
-        rows = c.execute("SELECT * FROM inventory WHERE stock_qty < reorder_threshold").fetchall()
-    return json.dumps([dict(r) for r in rows])
-
-@mcp.tool()
-def list_open_incidents() -> str:
-    with get_conn() as c:
-        rows = c.execute("SELECT * FROM incidents WHERE status != 'CLOSED'").fetchall()
-    return json.dumps([dict(r) for r in rows])
-
 @mcp.tool()
 def create_restock_order(sku: str, quantity: int, justification: str) -> str:
     with get_conn() as c:
